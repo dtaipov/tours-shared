@@ -9,14 +9,18 @@
   </head>
 
   <body>
-      <div class="header">
+      <h2 class="text-muted">Tours Shared</h2>
+      <div>
         <ul>
-          <li class="active"><a href="#">Home</a></li>
           <li><a href="/add-request">Add request</a></li>
-          <li><a href="#">Blog</a></li>
-          <li><a href="#">Press</a></li>
         </ul>
-        <h3 class="text-muted">Tours Shared</h3>
+        <%= requests.length %>
+        <% requests.forEach(function(request) { %>
+          <div>
+            <b><%= request.title.S %></b>
+            <div><%= request.description.S %></div>
+          </div>
+        <%})%>
       </div>
   </body>
 </html>

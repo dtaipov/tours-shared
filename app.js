@@ -1,11 +1,11 @@
-// Include the cluster module
 const cluster = require('cluster');
+const os = require('os');
 
 // Code to run if we're in the master process
 if (cluster.isMaster) {
 
     // Count the machine's CPUs
-    const cpuCount = require('os').cpus().length;
+    const cpuCount = os.cpus().length;
 
     // Create a worker for each CPU
     for (let i = 0; i < cpuCount; i += 1) {
@@ -42,7 +42,20 @@ if (cluster.isMaster) {
     app.use(bodyParser.urlencoded({extended:false}));
 
     app.get('/', function(req, res) {
-        res.render('index');
+        const params = {
+            ExpressionAttributeValues: {
+                ':y': { S: '2023' },
+            },
+            KeyConditionExpression: 'y = :y',
+            TableName: 'requests',
+        };
+
+        ddb.query(params, function(err, data) {
+            if (err) {
+                console.log("Error", err);
+            }
+            res.render('index', {requests: data?.Items});
+        });
     });
 
     app.get('/add-request', function(req, res) {
@@ -51,14 +64,15 @@ if (cluster.isMaster) {
 
     app.post('/add-request', function(req, res) {
         const item = {
-            'email': {'S': req.body.email},
-            'title': {'S': req.body.title},
-            'description': {'S': req.body.description},
+            y: { S: '2023' },
+            email: { S: req.body.email },
+            title: { S: req.body.title },
+            description: { S: req.body.description },
         };
 
         ddb.putItem({
-            'TableName': requestsTable,
-            'Item': item
+            TableName: requestsTable,
+            Item: item
         }, (err, data) => {
             if (err) {
                 let returnStatus = 500;
@@ -70,7 +84,7 @@ if (cluster.isMaster) {
                 res.status(returnStatus).end();
                 console.log('DDB Error: ' + err);
             } else {
-                console.log('DDB Success: ' + data);
+                res.redirect('/');
                 // sns.publish({
                 //     'Message': 'Name: ' + req.body.name + "\r\nEmail: " + req.body.email
                 //       + "\r\nPreviewAccess: " + req.body.previewAccess
