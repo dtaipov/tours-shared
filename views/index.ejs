@@ -14,8 +14,7 @@
         <ul>
           <li><a href="/add-request">Add request</a></li>
         </ul>
-        <%= requests.length %>
-        <% requests.forEach(function(request) { %>
+        <% requests?.forEach(function(request) { %>
           <div>
             <b><%= request.title.S %></b>
             <div><%= request.description.S %></div>
