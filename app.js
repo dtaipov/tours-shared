@@ -32,8 +32,9 @@ if (cluster.isMaster) {
     const sns = new AWS.SNS();
     const ddb = new AWS.DynamoDB();
 
-    const ddbTable =  process.env.STARTUP_SIGNUP_TABLE;
-    const snsTopic =  process.env.NEW_SIGNUP_TOPIC;
+    const ddbTable = process.env.STARTUP_SIGNUP_TABLE;
+    const requestsTable = process.env.REQUESTS_TABLE;
+    const snsTopic = process.env.NEW_SIGNUP_TOPIC;
     const app = express();
 
     app.set('view engine', 'ejs');
@@ -41,10 +42,50 @@ if (cluster.isMaster) {
     app.use(bodyParser.urlencoded({extended:false}));
 
     app.get('/', function(req, res) {
-        res.render('index', {
-            static_path: 'static',
-            theme: process.env.THEME || 'flatly',
-            flask_debug: process.env.FLASK_DEBUG || 'false'
+        res.render('index');
+    });
+
+    app.get('/add-request', function(req, res) {
+        res.render('addRequest');
+    });
+
+    app.post('/add-request', function(req, res) {
+        const item = {
+            'email': {'S': req.body.email},
+            'title': {'S': req.body.title},
+            'description': {'S': req.body.description},
+        };
+
+        ddb.putItem({
+            'TableName': requestsTable,
+            'Item': item
+        }, (err, data) => {
+            if (err) {
+                let returnStatus = 500;
+
+                if (err.code === 'ConditionalCheckFailedException') {
+                    returnStatus = 409;
+                }
+
+                res.status(returnStatus).end();
+                console.log('DDB Error: ' + err);
+            } else {
+                console.log('DDB Success: ' + data);
+                // sns.publish({
+                //     'Message': 'Name: ' + req.body.name + "\r\nEmail: " + req.body.email
+                //       + "\r\nPreviewAccess: " + req.body.previewAccess
+                //       + "\r\nTheme: " + req.body.theme,
+                //     'Subject': 'New user sign up!!!',
+                //     'TopicArn': snsTopic
+                // }, function(err, data) {
+                //     if (err) {
+                //         res.status(500).end();
+                //         console.log('SNS Error: ' + err);
+                //     } else {
+                //         res.status(201).end();
+                //     }
+                // });
+            }
         });
     });
 
